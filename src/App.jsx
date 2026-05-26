@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function BPSAnalyzerApp() {
   const [teamNumber, setTeamNumber] = useState("");
   const [teamConfirmed, setTeamConfirmed] = useState(false);
+
+  const [teamInfo, setTeamInfo] = useState({
+    nickname: "",
+    logo: "",
+  });
 
   const [uploadedVideo, setUploadedVideo] = useState(null);
   const [youtubeURL, setYoutubeURL] = useState("");
@@ -13,6 +18,52 @@ export default function BPSAnalyzerApp() {
 
   const [latestAnalysis, setLatestAnalysis] = useState(null);
 
+  // AUTOMATIC TEAM LOOKUP
+  // REAL IMPLEMENTATION:
+  // Use The Blue Alliance API:
+  // https://www.thebluealliance.com/apidocs
+
+  const fetchTeamInfo = async (team) => {
+    setAnalysisStatus("Fetching Team Data...");
+
+    // MOCK TEAM DATA
+    // Replace later with TBA API
+
+    const mockTeams = {
+      254: {
+        nickname: "The Cheesy Poofs",
+        logo:
+          "https://upload.wikimedia.org/wikipedia/en/7/7a/254_Cheesy_Poofs.png",
+      },
+
+      1678: {
+        nickname: "Citrus Circuits",
+        logo:
+          "https://upload.wikimedia.org/wikipedia/en/f/f0/Citrus_Circuits_Logo.png",
+      },
+
+      4414: {
+        nickname: "HighTide",
+        logo:
+          "https://upload.wikimedia.org/wikipedia/en/5/55/HighTide_4414.png",
+      },
+    };
+
+    setTimeout(() => {
+      if (mockTeams[team]) {
+        setTeamInfo(mockTeams[team]);
+      } else {
+        setTeamInfo({
+          nickname: "Unknown Team",
+          logo:
+            "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronteira.svg",
+        });
+      }
+
+      setAnalysisStatus("Waiting");
+    }, 1000);
+  };
+
   const analyzeMatch = async () => {
     if (!uploadedVideo && youtubeURL.trim() === "") {
       alert("Please upload a video or paste a YouTube URL.");
@@ -21,24 +72,27 @@ export default function BPSAnalyzerApp() {
 
     setAnalysisStatus("Downloading & Analyzing Match...");
 
-    // FUTURE REAL IMPLEMENTATION:
-    // If youtubeURL exists:
-    // 1. Send URL to backend
-    // 2. Backend downloads video using ytdl-core
-    // 3. Extract frames using ffmpeg
-    // 4. Analyze using OpenCV + YOLO
-    //
-    // If uploadedVideo exists:
-    // 1. Upload directly to backend
-    // 2. Process locally
-
     setTimeout(() => {
       const newAnalysis = {
-        estimatedBPS: 1.07,
-        hopperCapacity: 118,
-        hopperEmptyTime: 6.2,
-        shootingTime: 8.9,
-        fuelPerSecond: 19.1,
+        hopperCapacity: 78,
+
+        shootingTime: 5.1,
+
+        estimatedBPS: 15.3,
+
+        peakBPS: 17.8,
+
+        firingConsistency: 92,
+
+        shotAccuracy: 84,
+
+        cycleTime: 13.2,
+
+        autoFuel: 18,
+
+        teleopFuel: 60,
+
+        climbSuccess: true,
       };
 
       setLatestAnalysis(newAnalysis);
@@ -47,6 +101,7 @@ export default function BPSAnalyzerApp() {
         const existingTeam = prev[teamNumber] || {
           matches: 0,
           totalBPS: 0,
+          bestBPS: 0,
         };
 
         const updatedMatches = existingTeam.matches + 1;
@@ -54,14 +109,21 @@ export default function BPSAnalyzerApp() {
         const updatedTotalBPS =
           existingTeam.totalBPS + newAnalysis.estimatedBPS;
 
+        const updatedAverageBPS =
+          updatedTotalBPS / updatedMatches;
+
+        const updatedBestBPS = Math.max(
+          existingTeam.bestBPS,
+          newAnalysis.estimatedBPS
+        );
+
         return {
           ...prev,
           [teamNumber]: {
             matches: updatedMatches,
             totalBPS: updatedTotalBPS,
-            averageBPS: (
-              updatedTotalBPS / updatedMatches
-            ).toFixed(2),
+            averageBPS: updatedAverageBPS.toFixed(1),
+            bestBPS: updatedBestBPS.toFixed(1),
           },
         };
       });
@@ -75,7 +137,7 @@ export default function BPSAnalyzerApp() {
       <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center p-6">
         <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-10 w-full max-w-xl shadow-2xl">
           <h1 className="text-5xl font-black text-center">
-            BPS Analyzer
+            Steamworks BPS Analyzer
           </h1>
 
           <p className="text-zinc-400 text-center mt-4 text-lg">
@@ -92,8 +154,10 @@ export default function BPSAnalyzerApp() {
             />
 
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (teamNumber.trim() !== "") {
+                  await fetchTeamInfo(teamNumber);
+
                   setTeamConfirmed(true);
                 }
               }}
@@ -112,25 +176,43 @@ export default function BPSAnalyzerApp() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* HEADER */}
 
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-5xl font-black tracking-tight">
-              Team {teamNumber}
-            </h1>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+          <div className="flex flex-col lg:flex-row items-center gap-6">
+            {/* TEAM LOGO */}
 
-            <p className="text-zinc-400 mt-2 text-lg">
-              AI-powered FRC scouting analytics
-            </p>
-          </div>
+            <img
+              src={teamInfo.logo}
+              alt="Team Logo"
+              className="w-32 h-32 rounded-2xl object-cover border border-zinc-700"
+            />
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4">
-            <p className="text-zinc-400 text-sm">
-              Analyzer Status
-            </p>
+            {/* TEAM INFO */}
 
-            <h2 className="text-2xl font-bold text-cyan-400 mt-1">
-              {analysisStatus}
-            </h2>
+            <div>
+              <h1 className="text-5xl font-black">
+                Team {teamNumber}
+              </h1>
+
+              <h2 className="text-3xl font-bold text-cyan-400 mt-2">
+                {teamInfo.nickname}
+              </h2>
+
+              <p className="text-zinc-400 mt-3 text-lg">
+                AI-powered Steamworks scouting analytics
+              </p>
+            </div>
+
+            {/* STATUS */}
+
+            <div className="lg:ml-auto bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4">
+              <p className="text-zinc-400 text-sm">
+                Analyzer Status
+              </p>
+
+              <h2 className="text-2xl font-bold text-cyan-400 mt-1">
+                {analysisStatus}
+              </h2>
+            </div>
           </div>
         </div>
 
@@ -142,13 +224,11 @@ export default function BPSAnalyzerApp() {
           </h2>
 
           <p className="text-zinc-400 mt-2">
-            Upload a match video OR paste a YouTube URL
-            for automatic AI analysis.
+            Upload a match recording OR paste a YouTube
+            URL for automatic Steamworks shooter analysis.
           </p>
 
           <div className="grid grid-cols-1 gap-4 mt-6">
-            {/* YOUTUBE URL */}
-
             <input
               type="text"
               placeholder="Paste YouTube Match URL"
@@ -157,16 +237,12 @@ export default function BPSAnalyzerApp() {
               className="bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 outline-none focus:border-cyan-400"
             />
 
-            {/* FILE UPLOAD */}
-
             <input
               type="file"
               accept="video/*"
               className="bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4"
               onChange={(e) => setUploadedVideo(e.target.files[0])}
             />
-
-            {/* ANALYZE BUTTON */}
 
             <button
               onClick={analyzeMatch}
@@ -175,93 +251,111 @@ export default function BPSAnalyzerApp() {
               Analyze Match
             </button>
           </div>
-
-          {/* FEATURES */}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6 text-sm">
-            <div className="bg-zinc-950 rounded-xl p-4 border border-zinc-800">
-              • Automatic BPS calculation
-            </div>
-
-            <div className="bg-zinc-950 rounded-xl p-4 border border-zinc-800">
-              • Fuel counting
-            </div>
-
-            <div className="bg-zinc-950 rounded-xl p-4 border border-zinc-800">
-              • Hopper capacity estimation
-            </div>
-
-            <div className="bg-zinc-950 rounded-xl p-4 border border-zinc-800">
-              • Shooting duration tracking
-            </div>
-
-            <div className="bg-zinc-950 rounded-xl p-4 border border-zinc-800">
-              • AI cycle timing analysis
-            </div>
-
-            <div className="bg-zinc-950 rounded-xl p-4 border border-zinc-800">
-              • Historical BPS averaging
-            </div>
-          </div>
         </div>
 
         {/* ANALYTICS */}
 
         {latestAnalysis && (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
-              <p className="text-zinc-400 text-sm">
-                Estimated BPS
-              </p>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
+                <p className="text-zinc-400 text-sm">
+                  Sustained BPS
+                </p>
 
-              <h2 className="text-4xl font-black mt-2 text-cyan-400">
-                {latestAnalysis.estimatedBPS}
-              </h2>
+                <h2 className="text-4xl font-black mt-2 text-cyan-400">
+                  {latestAnalysis.estimatedBPS}
+                </h2>
+              </div>
+
+              <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
+                <p className="text-zinc-400 text-sm">
+                  Peak BPS
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-cyan-400">
+                  {latestAnalysis.peakBPS}
+                </h2>
+              </div>
+
+              <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
+                <p className="text-zinc-400 text-sm">
+                  Hopper Capacity
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-cyan-400">
+                  {latestAnalysis.hopperCapacity}
+                </h2>
+              </div>
+
+              <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
+                <p className="text-zinc-400 text-sm">
+                  Shooting Time
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-cyan-400">
+                  {latestAnalysis.shootingTime}s
+                </h2>
+              </div>
+
+              <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
+                <p className="text-zinc-400 text-sm">
+                  Shot Accuracy
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-cyan-400">
+                  {latestAnalysis.shotAccuracy}%
+                </h2>
+              </div>
             </div>
 
-            <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
-              <p className="text-zinc-400 text-sm">
-                Hopper Capacity
-              </p>
+            {/* ADVANCED METRICS */}
 
-              <h2 className="text-4xl font-black mt-2 text-cyan-400">
-                {latestAnalysis.hopperCapacity}
-              </h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
+                <p className="text-zinc-400 text-sm">
+                  Firing Consistency
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-cyan-400">
+                  {latestAnalysis.firingConsistency}%
+                </h2>
+              </div>
+
+              <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
+                <p className="text-zinc-400 text-sm">
+                  Cycle Time
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-cyan-400">
+                  {latestAnalysis.cycleTime}s
+                </h2>
+              </div>
+
+              <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
+                <p className="text-zinc-400 text-sm">
+                  Auto Fuel
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-cyan-400">
+                  {latestAnalysis.autoFuel}
+                </h2>
+              </div>
+
+              <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
+                <p className="text-zinc-400 text-sm">
+                  Teleop Fuel
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-cyan-400">
+                  {latestAnalysis.teleopFuel}
+                </h2>
+              </div>
             </div>
-
-            <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
-              <p className="text-zinc-400 text-sm">
-                Empty Time
-              </p>
-
-              <h2 className="text-4xl font-black mt-2 text-cyan-400">
-                {latestAnalysis.hopperEmptyTime}s
-              </h2>
-            </div>
-
-            <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
-              <p className="text-zinc-400 text-sm">
-                Shooting Time
-              </p>
-
-              <h2 className="text-4xl font-black mt-2 text-cyan-400">
-                {latestAnalysis.shootingTime}s
-              </h2>
-            </div>
-
-            <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-5">
-              <p className="text-zinc-400 text-sm">
-                Fuel / Second
-              </p>
-
-              <h2 className="text-4xl font-black mt-2 text-cyan-400">
-                {latestAnalysis.fuelPerSecond}
-              </h2>
-            </div>
-          </div>
+          </>
         )}
 
-        {/* DATABASE */}
+        {/* TEAM DATABASE */}
 
         <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-6">
           <h2 className="text-3xl font-black">
@@ -290,9 +384,15 @@ export default function BPSAnalyzerApp() {
                   </div>
                 </div>
 
-                <p className="text-zinc-500 mt-3">
-                  Matches Stored: {data.matches}
-                </p>
+                <div className="flex justify-between mt-4 text-sm text-zinc-400">
+                  <p>
+                    Matches Stored: {data.matches}
+                  </p>
+
+                  <p>
+                    Best BPS: {data.bestBPS}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
