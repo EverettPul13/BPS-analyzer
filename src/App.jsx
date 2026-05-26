@@ -5,7 +5,7 @@ export default function Rebuilt2026Analyzer() {
   // CONFIG
   // =========================================
 
-  const TBA_API_KEY = "PASTE_YOUR_TBA_API_KEY_HERE";
+  const TBA_API_KEY = "BVn5sq6XPPX3tQ8WYhOW72RfM52Pku23k9WbGtckcno39RWnE3TCnIN0AMv4tujp";
 
   // =========================================
   // STATE
